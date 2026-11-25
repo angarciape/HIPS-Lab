@@ -1,0 +1,22 @@
+'use strict';
+const assert=require('node:assert/strict');
+const H=require('./modelo_termico.js'),M=require('./modelo_mezcla_v18.js'),B=require('./modelo_balances_v19.js'),R=require('./modelo_reologia_v19.js'),F=require('./modelo_frente_v20.js'),C=require('./modelo_acoplado_v21.js');
+const p={hopper:22,masterbatch:2,water:53.3,melt:230,flow:6,deltaWater:1,packP:30,thickness:1.72,injection:9,hold:8,cool:34,gate:'centro'};
+let checks=0;
+function check(test,message){assert.ok(test,message);checks++;}
+const comp=M.composition(p.masterbatch);check(Math.abs(comp.hipsG-452.76)<1e-8,'masa HIPS');check(Math.abs(comp.mbG-9.24)<1e-8,'masa MB');
+const sim=H.simulate(p),balance=B.calculate(p,sim,83,p.deltaWater),front=F.simulate(p),coupled=C.calculate(front,p);
+check(Math.abs(balance.heatKJ-balance.pieceEnergyKJ-balance.moldEnergyKJ)<1e-8,'cierre de energía algebraico');
+check(Math.abs(balance.qWaterKJ-130.01776567)<0.01,'agua con FROM hipotética');
+check(Math.abs(balance.moldEnergyKJ-154.77480866)<0.01,'calor pieza');
+check(balance.moldEnergyKJ>balance.qWaterKJ,'sistema base refleja déficit de contraste');
+const equalWater=B.calculate(p,sim,83,balance.deltaRequiredC);
+check(Math.abs(equalWater.qWaterKJ-balance.moldEnergyKJ)<1e-6,'agua requerida por igualdad algebraica');
+const meltV=.462/H.rho(p.melt)*1e6,meshV=front.total/1000;
+check(meltV>meshV,'incompatibilidad volumen geométrico detectada');
+check(Math.abs((meshV/meltV-1)*100+16.574)<0.1,'magnitud discrepancia volumen');
+check(Math.abs(R.approximateFlow(p).flowCm3S-53.7753)<0.01,'caudal');
+check(Math.abs(coupled.maxPressureBar-87.225)<0.1,'red de presión sin cambios');
+check(H.cp(220)>H.cp(100) && H.k(230)===H.k(220),'funciones de propiedad sin modificación');
+console.log(`OK auditoría v25: ${checks} comprobaciones de masa, energía, agua, volumen y presión.`);
+console.log(`Advertencias intencionales: malla=${meshV.toFixed(2)} cc vs disparo a T_fundido=${meltV.toFixed(2)} cc; agua=${balance.qWaterKJ.toFixed(2)} kJ vs pieza=${balance.moldEnergyKJ.toFixed(2)} kJ`);

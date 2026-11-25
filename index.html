@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>Haitian MA3800 · Laboratorio de inyección 3D | HIPS</title>
+<link href="estilos.css" rel="stylesheet"/>
+</head>
+<body>
+<div class="app-shell">
+<aside class="sidebar">
+<div class="brand" id="brandInfoRegion"><div class="brand-mark">H<span>·</span></div><div class="brand-copy"><strong>HIPS LAB</strong><small>INGENIERÍA DE PROCESOS CON POLÍMEROS <b>· FINAL V30</b></small></div><div class="brand-about" id="brandAbout"><button type="button" aria-label="¿Qué hace HIPS LAB?" aria-expanded="false" aria-controls="brandTooltip" title="Acerca del simulador">i</button><div class="brand-tooltip" id="brandTooltip" role="note"><strong>¿Qué hace HIPS LAB?</strong><p>Simulador educativo 3D de una inyectora Haitian MA3800 que fabrica una <b>puerta evaporadora</b>, la puerta del congelador de una nevera.</p><p>Permite observar la alimentación de pellets HIPS y masterbatch, el movimiento del tornillo, el llenado del molde, el enfriamiento y la expulsión de la pieza.</p><p>Modifica temperaturas, caudal de refrigeración, tiempos, espesor y punto de entrada hipotético para explorar cómo cambian las temperaturas de la puerta, el flujo, el calor retirado, la presión estimada y la contracción.</p><p><b>Advertencia:</b> combina datos reales observados, bibliografía, valores inferidos y parámetros supuestos. No es una simulación industrial validada ni sirve para ajustar la máquina real.</p></div></div></div>
+<div class="sidebar-scroll">
+<div class="section-label">VISUALIZACIÓN</div>
+<div aria-label="Vista de simulación" class="view-switch" role="group"><button class="is-active" id="btnMachine">Inyectora 3D</button><button id="btnPart">Pieza 3D</button></div>
+<div class="toggle-row"><label class="switch-wrap"><input checked="" id="thermal" type="checkbox"/><span>Mapa de temperatura (desmarcar: color de mezcla)</span></label><span class="tiny-label">ACTIVO</span></div>
+<hr/>
+<div class="section-label">CONDICIONES DEL PROCESO</div>
+<div class="control"><div class="control-head"><label for="hopper">Temperatura material en tolva</label><output id="hopperVal">22 °C</output></div><input id="hopper" max="45" min="15" step="1" type="range" value="22"/><div class="scale"><span>15 °C</span><span>45 °C</span></div><div class="hint">Supuesto de alimentación; modifica Q de calentamiento, no el enfriamiento si el fundido sigue a la misma T.</div></div>
+<div class="control"><div class="control-head"><label for="masterbatch">Masterbatch blanco en masa</label><output id="masterbatchVal">2.0 %</output></div><input id="masterbatch" max="8" min="0" step="0.1" type="range" value="2"/><div class="scale"><span>0 %</span><span>8 %</span></div><div class="hint">Modifica HIPS / masterbatch, color aparente y una contracción libre estimada (hipótesis).</div></div>
+<div class="control"><div class="control-head"><label for="water">Agua hacia el molde · TO</label><output id="waterVal">53.3 °C</output></div><input id="water" max="70" min="40" step="0.1" type="range" value="53.3"/><div class="scale"><span>40 °C</span><span>70 °C</span></div></div>
+<div class="control"><div class="control-head"><label for="melt">Boquilla / zona 1 del tornillo</label><output id="meltVal">230 °C</output></div><input id="melt" max="240" min="200" step="1" type="range" value="230"/><div class="scale"><span>200 °C</span><span>240 °C</span></div><div class="hint">Las demás zonas siguen el perfil de referencia de la foto: 230 / 210 / 210 / 200 / 200 °C cuando la boquilla vale 230 °C.</div></div>
+<div class="control"><div class="control-head"><label for="flow">Caudal de agua</label><output id="flowVal">6.0 GPM</output></div><input id="flow" max="12" min="2" step="0.5" type="range" value="6"/><div class="scale"><span>2 GPM</span><span>12 GPM</span></div></div>
+<div class="control from-section" aria-labelledby="fromControlTitle">
+  <div class="control-head"><strong id="fromControlTitle">Temperatura de retorno · FROM</strong><span class="from-badge" id="fromModeBadge">SIN MEDICIÓN</span></div>
+  <p class="from-explainer">Por defecto el retorno <b>NO está medido</b>. Se utiliza una diferencia térmica <b>hipotética de 1,0 °C</b> respecto a TO únicamente para contrastar el balance del agua.</p>
+  <label class="from-confirm"><input type="checkbox" id="fromRealConfirm"/><span>Confirmo que tengo un valor <b>real medido</b> de FROM, del retorno del mismo circuito y en estas condiciones del proceso</span></label>
+  <div class="from-input-row"><label for="fromRealValue">Lectura FROM (°C)</label><input type="number" id="fromRealValue" inputmode="decimal" min="0" max="120" step="0.1" placeholder="Ingrese la lectura real" disabled required/></div>
+  <p class="from-status" id="fromStatus" role="status" aria-live="polite">Sin lectura real: se usa FROM ≈ TO + 1,0 °C, valor supuesto.</p>
+  <div class="hint">El dato medido se aplica solo a las condiciones vigentes al registrarlo. Si modificas los parámetros, la comparación vuelve a la hipótesis. FROM afecta el balance del agua, <b>no</b> la temperatura calculada de la pieza ni el molde.</div>
+</div>
+<div class="control"><div class="control-head"><label for="packP">Presión de compactación hipotética</label><output id="packPVal">30 MPa</output></div><input id="packP" max="60" min="5" step="1" type="range" value="30"/><div class="scale"><span>5 MPa</span><span>60 MPa</span></div><div class="hint">Sólo afecta la estimación PVT; no representa una presión medida ni la presión hidráulica.</div></div>
+<div class="control"><div class="control-head"><label for="thickness">Espesor del panel principal</label><output id="thicknessVal">1.72 mm</output></div><input id="thickness" max="3.3" min="1.2" step="0.01" type="range" value="1.72"/><div class="scale"><span>1.2 mm</span><span>3.3 mm</span></div><div class="hint">Inferido de masa y volumen; no medido.</div></div>
+<hr/>
+<div class="section-label">TIEMPOS DEL CICLO</div>
+<div class="control"><div class="control-head"><label for="injection">Llenado / inyección</label><output id="injectionVal">9 s</output></div><input id="injection" max="14" min="4" step="1" type="range" value="9"/></div>
+<div class="control"><div class="control-head"><label for="gate">Entrada del polímero (ubicación supuesta)</label></div><select aria-label="Ubicación hipotética del punto de entrada" class="gate-select" id="gate"><option value="centro">Centro · supuesto inicial</option><option value="arriba">Borde superior</option><option value="derecha">Lateral derecho</option><option value="abajo">Borde inferior</option><option value="izquierda">Lateral izquierdo</option></select><div class="hint">La posición de entrada real es desconocida; se prueban alternativas geométricas.</div></div>
+<div class="control"><div class="control-head"><label for="hold">Sostenimiento</label><output id="holdVal">8 s</output></div><input id="hold" max="14" min="3" step="1" type="range" value="8"/></div>
+<div class="control"><div class="control-head"><label for="cool">Enfriamiento adicional</label><output id="coolVal">34 s</output></div><input id="cool" max="50" min="20" step="1" type="range" value="34"/></div>
+<button class="restore" id="restore">↺  Restaurar valores de referencia</button>
+<p class="disclaimer"><strong>Modelo exploratorio.</strong> La geometría es aproximada; la entrada del polímero no se conoce. El nuevo frente de flujo representa caminos de menor resistencia, no una simulación CFD/CAE ni una predicción validada.</p>
+</div>
+</aside>
+<main class="workspace">
+<header class="topbar"><div class="crumb">PROYECTO / <strong>HAITIAN MA3800</strong> / SIMULACIÓN · <a class="nav-balance" data-open-result="frente" href="#resultados">Ver llenado 2D ↓</a> · <a class="nav-balance" data-open-result="acoplado" href="#resultados">Flujo térmico y presión ↓</a> · <a class="nav-balance" data-open-result="materia" href="#resultados">Balance de materia ↓</a> · <a class="nav-balance" data-open-result="guia" href="#resultados">Cómo se calculó ↓</a></div><div class="topbar-right"><span class="live-dot"></span><span>SIMULADOR LOCAL</span><span class="separator"></span><span><span id="headerComposition">HIPS 98 % + MB 2 %</span></span></div></header>
+<div class="page-head"><div><div class="eyebrow">MOLDEO POR INYECCIÓN · MODELO HÍBRIDO</div><h1>Haitian MA3800 <span>— ciclo de inyección</span></h1><p>Interactúa con las temperaturas, el caudal de refrigeración y los tiempos. Observa cómo cambia el enfriamiento de la puerta evaporadora.</p></div><div class="head-pill">01 / <strong>PLANTA DIGITAL</strong></div></div>
+<section class="viewer-wrap">
+<div class="viewer-head"><div class="viewer-title"><span class="dot-cube">◈</span><b id="sceneTitle">Inyectora · conjunto completo</b><span class="view-tag">VISTA 3D ESQUEMÁTICA</span></div><div class="viewer-commands"><button id="cameraReset" title="Restablecer orientación">⟲ Vista</button><button id="exportPNG" title="Guardar imagen del modelo">↓ Imagen</button></div></div>
+<div class="canvas-frame">
+<canvas aria-label="Visor 3D interactivo de la inyectora y la puerta" id="scene"></canvas>
+<div class="scene-label machine-label" id="machineLabel"><span class="label-kicker">HAITIAN</span><strong>380F <span>MA3800</span></strong><small>UNIDAD DE INYECCIÓN / CIERRE</small></div>
+<div class="screw-plot" aria-label="Posición axial del tornillo sincronizada con el ciclo">
+ <div class="screw-plot-head"><strong>Movimiento del tornillo</strong><span id="screwValue">0 mm</span></div>
+ <canvas id="screwChart" role="img" aria-label="Posición axial del tornillo en milímetros versus tiempo de ciclo en segundos"></canvas>
+ <div class="screw-plot-state" id="screwState">Retrocediendo · dosificación</div>
+ <div class="screw-plot-note">Carrera inferida; no es lectura de sensor</div>
+ </div>
+ <div class="scene-badge" id="phaseBadge">ALIMENTACIÓN Y PLASTIFICACIÓN</div>
+<div class="scene-help">ARRASTRAR PARA GIRAR <span>·</span> RUEDA PARA ACERCAR <span>·</span> DOBLE CLIC PARA REINICIAR</div>
+<div class="scene-compass"><span>3D</span><span class="axis-x">X</span><span class="axis-y">Y</span><span class="axis-z">Z</span></div>
+</div>
+<div class="temperature-key" role="group" aria-label="Escala de temperatura de la pieza de 20 a 220 grados Celsius">
+  <div class="scale-heading">TEMPERATURA DE LA PIEZA <span>°C</span></div>
+  <div class="temp-scale">
+    <div class="scale-ticks" aria-hidden="true">
+      <span style="left:0%">20 °C</span><span style="left:30%">80 °C</span><span style="left:40%">100 °C</span><span style="left:80%">180 °C</span><span style="left:100%">220 °C</span>
+    </div>
+    <div class="temp-ruler" aria-hidden="true"><span style="left:0%"></span><span style="left:30%"></span><span style="left:40%"></span><span style="left:80%"></span><span style="left:100%"></span></div>
+    <div class="grad" aria-hidden="true"></div>
+  </div>
+  <div class="key-note">Rojo desde 100 °C · máquina: escala orientativa distinta</div>
+</div>
+</section>
+<section class="transport"><div class="transport-top"><div class="phase"><span class="phase-icon" id="phaseIcon">●</span><div><small>ETAPA ACTUAL</small><strong id="phaseName">Alimentación y plastificación</strong></div></div><div class="transport-clock"><span id="clock">00.0 s</span><small id="totalClock">/ 83 s</small></div></div>
+<div class="track"><input id="time" max="83" min="0" step="0.1" type="range" value="0"/><div class="segments" id="segments"></div></div>
+<div class="transport-controls"><div class="play-actions"><button class="play" id="play">▶ <span>Reproducir</span></button><button class="secondary" id="restart">↺ Reiniciar</button></div><div class="speed-wrap"><span>VELOCIDAD</span><button class="speed" data-speed="1">1×</button><button class="speed is-active" data-speed="3">3×</button><button class="speed" data-speed="6">6×</button></div></div>
+</section>
+<section class="metrics"><div class="metric"><div class="metric-label">TOLVA / MATERIAL ENTRANTE</div><div class="metric-val"><span id="hopperMetric">22.0</span><small>°C</small></div><div class="metric-footer"><span class="mini-dot blue"></span>Temperatura supuesta</div></div>
+<div class="metric"><div class="metric-label">BOQUILLA / ZONA 1</div><div class="metric-val"><span id="nozzleMetric">230</span><small>°C</small></div><div class="metric-footer"><span class="mini-dot orange"></span>Consigna medida</div></div>
+<div class="metric"><div class="metric-label">PARED EFECTIVA DEL MOLDE</div><div class="metric-val"><span id="moldMetric">57.0</span><small>°C</small></div><div class="metric-footer"><span class="mini-dot cyan"></span>Calculada mediante supuesto</div></div>
+<div class="metric"><div class="metric-label">CENTRO DEL PANEL / EXPULSIÓN</div><div class="metric-val"><span id="panelMetric">—</span><small>°C</small></div><div class="metric-footer"><span class="mini-dot lime"></span>Predicción térmica 1D</div></div>
+<div class="metric"><div class="metric-label">CALOR RETIRADO EN EL ENFRIAMIENTO</div><div class="metric-val"><span id="qRemovedMetric">—</span><small>kJ</small></div><div class="metric-footer"><span class="mini-dot cyan"></span>Estimado dentro del molde</div></div>
+<div class="metric"><div class="metric-label">CONTRACCIÓN LIBRE DEL PANEL</div><div class="metric-val"><span id="shrinkMetric">—</span><small>%</small></div><div class="metric-footer"><span class="mini-dot orange"></span>Respecto a 23 °C</div></div>
+<div class="metric"><div class="metric-label">LLENADO DE LA CAVIDAD (INSTANTÁNEO)</div><div class="metric-val"><span id="fillMetric">0</span><small>%</small></div><div class="metric-footer"><span class="mini-dot blue"></span>Avance visual del llenado</div></div>
+<div class="metric"><div class="metric-label">PRESIÓN RELATIVA DEL CICLO</div><div class="metric-val"><span id="pressureMetric">0</span><small>%</small></div><div class="metric-footer"><span class="mini-dot cyan"></span>Índice cualitativo</div></div>
+<div class="metric"><div class="metric-label">COMPACTACIÓN / PACKING</div><div class="metric-val"><span id="packMetric">0</span><small>%</small></div><div class="metric-footer"><span class="mini-dot lime"></span>Durante sostenimiento y enfriamiento</div></div>
+<div class="metric"><div class="metric-label">MASA TOTAL ALIMENTADA · CICLO</div><div class="metric-val"><span id="fedMetric">0.00</span><small>g / 462 g</small></div><div class="metric-footer"><span class="mini-dot blue"></span>Dosificación acumulada, modelo ideal</div></div>
+<div class="metric"><div class="metric-label">CONTRACCIÓN LIBRE ESTIMADA · PANEL</div><div class="metric-val"><span id="shrinkMixMetric">—</span><small>%</small></div><div class="metric-footer"><span class="mini-dot orange"></span>Desde la temperatura media de expulsión hasta 23 °C</div></div></section>
+<div class="lower-grid"><section class="data-card"><div class="card-top"><div><small>MODELO TERMOTRANSITORIO</small><h2>Temperatura en la pieza</h2></div><button id="exportCSV">↓ CSV</button></div><canvas id="temperatureChart"></canvas><div class="chart-legend"><span><i class="line-panel"></i>Centro del panel</span><span><i class="line-corner"></i>Punto de ensamble (4.15 mm)</span><span><i class="line-mold"></i>Pared del molde</span></div></section>
+<section class="data-card features"><div class="card-top"><div><small>COMPONENTES DEL SISTEMA</small><h2>Lecturas y referencias</h2></div></div><div class="machine-data"><div><span>Zonas del tornillo (medidas)</span><strong id="barrelSetpoints">230 / 210 / 210 / 200 / 200 °C</strong></div><div><span>Caudal refrigerante</span><strong id="waterReadout">6.0 GPM · 22.7 L/min</strong></div><div><span>Masterbatch en alimentación</span><strong id="mbReadout">2.0 %</strong></div><div><span>Temperatura FROM · estado indicado</span><strong id="returnReadout">≈54.3 °C (supuesto)</strong></div><div><span>Calor sensible para calentar carga</span><strong id="qReadout">—</strong></div><div><span>Calor retirado en el molde</span><strong id="qRemovedReadout">—</strong></div><div><span>T centro ensamble a expulsión</span><strong id="cornerReadout">—</strong></div><div><span>Contracción libre ensamble</span><strong id="cornerShrinkReadout">—</strong></div><div><span>Máx. presión nominal inyectora</span><strong>1580 bar</strong></div><div><span>Fuerza nominal de cierre</span><strong>3786.3 kN</strong></div></div><p class="mini-note">El indicador de presión nominal no es una presión medida del ciclo. Los dos núcleos móviles están documentados, pero no se animan porque no conocemos su ubicación en el molde.</p></section></div>
+
+
+
+
+
+<section aria-label="Resultados detallados del proceso" class="results-hub" id="resultados"><div class="results-hub-heading"><div><div class="eyebrow">CONSULTA INTERACTIVA · RESULTADOS DEL MODELO</div><h2>Explora los resultados</h2><p>Selecciona una categoría para consultar sus cálculos. Solo se abrirá un panel a la vez; vuelve a pulsar el botón para cerrarlo.</p></div></div><div aria-label="Secciones de resultados" class="results-actions" role="group"><button aria-controls="resultado-disparo" aria-expanded="false" class="result-action" data-target="disparo" type="button"><span class="result-action-name">Disparo y mezcla</span><span class="result-action-sub">balance por disparo y gráfica de llenado</span></button><button aria-controls="resultado-frente" aria-expanded="false" class="result-action" data-target="frente" type="button"><span class="result-action-name">Frente de llenado</span><span class="result-action-sub">mapa 2D y regiones</span></button><button aria-controls="resultado-acoplado" aria-expanded="false" class="result-action" data-target="acoplado" type="button"><span class="result-action-name">Flujo y presión</span><span class="result-action-sub">temperatura, viscosidad y pérdida de presión</span></button><button aria-controls="resultado-materia" aria-expanded="false" class="result-action" data-target="materia" type="button"><span class="result-action-name">Balance de materia</span><span class="result-action-sub">entradas y salidas en gramos</span></button><button aria-controls="resultado-energia" aria-expanded="false" class="result-action" data-target="energia" type="button"><span class="result-action-name">Balance de energía</span><span class="result-action-sub">calentamiento, refrigeración y agua</span></button><button aria-controls="resultado-reologia" aria-expanded="false" class="result-action" data-target="reologia" type="button"><span class="result-action-name">Reología y PVT</span><span class="result-action-sub">viscosidad, caudal y compresión</span></button><button aria-controls="resultado-incertidumbre" aria-expanded="false" class="result-action" data-target="incertidumbre" type="button"><span class="result-action-name">Sensibilidad</span><span class="result-action-sub">operación, propiedades térmicas y reología</span></button><button aria-controls="resultado-auditoria" aria-expanded="false" class="result-action" data-target="auditoria" type="button"><span class="result-action-name">Auditoría técnica</span><span class="result-action-sub">ecuaciones: fuentes y supuestos</span></button><button aria-controls="resultado-convergencia" aria-expanded="false" class="result-action" data-target="convergencia" type="button"><span class="result-action-name">Malla y convergencia</span><span class="result-action-sub">volumen equivalente y comparación 3 mallas</span></button><button aria-controls="resultado-guia" aria-expanded="false" class="result-action" data-target="guia" type="button"><span class="result-action-name">Cómo se calculó</span><span class="result-action-sub">12 pasos · fórmulas y fuentes</span></button></div><div aria-label="Disparo y mezcla" class="result-panel" data-panel="disparo" hidden="" id="resultado-disparo" role="region"><div class="lower-grid v18-grid" id="disparo">
+<section class="data-card"><div class="card-top"><div><small>BALANCE POR DISPARO</small><h2>Composición de la alimentación</h2></div><span class="method-tag">462 g / pieza</span></div>
+<div class="mix-summary"><div><span class="mix-dot hips"></span><span>HIPS natural</span><strong id="hipsPct">98.0 %</strong><em id="hipsMass">452.76 g</em></div><div><span class="mix-dot mb"></span><span>Masterbatch blanco</span><strong id="mbPct">2.0 %</strong><em id="mbMass">9.24 g</em></div></div>
+<div aria-label="Fracción másica HIPS y masterbatch" class="composition-track"><div class="composition-hips" id="mixHipsBar" style="width:98%"></div><div class="composition-mb" id="mixMbBar" style="width:2%"></div></div>
+<div class="comp-mini"><div>Color visual esperado: <span class="part-swatch" id="mixColorSwatch"></span><strong id="mixColorLabel">Blanco aproximado</strong></div><div><strong id="feedTotalLabel">462.00 g</strong> material a alimentar por ciclo (sin colada)</div></div>
+<div class="feedbar"><div id="feedBar" style="width:0%"></div></div><div class="small-info">Alimentado hasta el instante seleccionado: <strong id="fedDetailed">0.00 g</strong> (<strong id="fedFraction">0.0 %</strong> del disparo). La velocidad de dosificación es lineal supuesta.</div>
+<p class="mini-note">El porcentaje se calcula en masa, no contando pellets. El blanqueamiento visual es ilustrativo; el masterbatch real necesita caracterización óptica y física.</p>
+</section>
+<section class="data-card"><div class="card-top"><div><small>DINÁMICA DE INYECCIÓN</small><h2>Llenado de la cavidad vs. tiempo</h2></div><span class="method-tag" id="fillDurationLabel">9 s de llenado</span></div>
+<canvas aria-label="Gráfica de porcentaje de llenado de la puerta a lo largo del ciclo" id="fillChart" role="img"></canvas>
+<div class="chart-legend"><span><i style="background:#58cbd4"></i>Porcentaje de llenado</span><span><i style="background:#efa95b"></i>Tiempo seleccionado</span></div>
+<p class="mini-note">Se supone un caudal volumétrico constante durante el llenado. Es una curva de avance idealizada, no una predicción del frente real dentro del molde.</p>
+</section>
+</div></div><div aria-label="Frente de llenado" class="result-panel" data-panel="frente" hidden="" id="resultado-frente" role="region"><section aria-labelledby="frenteTitle" class="balances-section" id="frente">
+<div class="balances-heading"><div><div class="eyebrow">FASE DE LLENADO · SIMULACIÓN ESPACIAL 2D</div><h2 id="frenteTitle">Propagación del fundido en la cavidad</h2>
+<p>Orden exploratorio de llegada del polímero sobre una superficie equivalente de la puerta. Cambia la entrada y el espesor del panel para comparar los frentes. La posición real de la compuerta aún se desconoce.</p></div>
+<button class="balance-download" id="downloadFront">↓ Exportar llegada por celda CSV</button>
+</div>
+<div class="flow-front-grid">
+<article class="data-card flow-map-card">
+<div class="card-top"><div><small>MAPA DE LLENADO · MALLA BIDIMENSIONAL</small><h3>Frente de avance de la masa fundida</h3></div><span class="method-tag" id="mapGateLabel">Entrada: centro (supuesto)</span></div>
+<div class="map-control"><label for="flowMapMode">Visualizar en la malla</label><select aria-label="Variable de mapa" class="gate-select" id="flowMapMode"><option value="fill">Avance de llenado</option><option value="pressure">Pérdida de presión acumulada</option></select></div><canvas aria-label="Mapa de avance de llenado o pérdida acumulada de presión" id="frontMap" role="img"></canvas>
+<div id="fillLegend" class="flow-front-legend"><span><i class="flow-legend-filled"></i>Ocupado por fundido</span><span><i class="flow-legend-empty"></i>Sin llenar</span><span><i class="flow-legend-gate"></i>Entrada supuesta</span></div>
+<div id="pressureLegend" class="pressure-legend" hidden><div class="pressure-legend-title">Pérdida de presión acumulada (ΔP): <b>azul = menor</b> · <b class="pressure-high">rojo = mayor</b></div><div class="pressure-gradient" aria-hidden="true"></div><div class="pressure-legend-scale"><span id="pressureLow">0 bar · menor</span><span id="pressureHigh">— bar · mayor</span></div><p class="mini-note">La escala corresponde a la pérdida acumulada desde la entrada supuesta, no a la presión absoluta en la cavidad. Solo se colorean las celdas ya llenadas.</p></div>
+<div class="flow-summary"><div><span>Volumen ocupado en la malla</span><strong><span id="frontFilled">0.0</span> %</strong></div><div><span>Tiempo de llenado</span><strong><span id="frontElapsed">0.0</span> s</strong></div><div><span>Última celda llena</span><strong id="frontLast">Pendiente</strong></div></div>
+</article>
+<article class="data-card flow-table-card">
+<div class="card-top"><div><small>ARRIBO DEL FRENTE · MODELO ORIENTATIVO</small><h3>Tiempo de llegada por región</h3></div><span class="method-tag">segundos desde inicio de llenado</span></div>
+<table class="balance-table"><thead><tr><th>Zona</th><th>t llegada</th><th>Estado actual</th></tr></thead><tbody id="frontRegionRows"></tbody></table>
+<div class="flow-equation"><strong>Hipótesis de propagación</strong><code>Velocidad geométrica relativa ∝ espesor²</code><code>∑ (espesor × área de celda) = fracción volumétrica llenada</code></div>
+<p class="mini-note">Los espesores del panel (inferido) y los medidos en el lateral se distribuyen sobre franjas cuya extensión espacial es supuesta. El orden de avance se calcula mediante caminos de menor costo y se normaliza al tiempo de llenado que configures. No resuelve ecuaciones de presión ni representa el verdadero punto de entrada, fuente de chorro o soldaduras.</p>
+</article>
+</div>
+<div class="balance-caution">La visualización distingue <strong>verificación numérica</strong> (conservación y monotonía) de <strong>validación experimental</strong> (no disponible). Sin dimensiones de la compuerta, mapa real de espesores y presión de cavidad, esta predicción es una <strong>comparación de escenarios geométricos</strong>.</div>
+</section></div><div aria-label="Flujo y presión" class="result-panel" data-panel="acoplado" hidden="" id="resultado-acoplado" role="region"><section aria-labelledby="acopladoTitle" class="balances-section" id="acoplado">
+<div class="balances-heading"><div><div class="eyebrow">ACOPLAMIENTO TÉRMICO–REOLÓGICO · v21</div><h2 id="acopladoTitle">Llenado, temperatura y caída de presión</h2><p>Modelo de red de caminos con espesores locales. Cada rama transporta una fracción del caudal estimada por el volumen descendiente. La viscosidad Cross-WLF se evalúa con temperatura y cizallamiento locales aproximados.</p></div><button class="balance-download" id="downloadCoupled">↓ Exportar malla acoplada CSV</button></div>
+<div class="coupled-metrics">
+<div><span>Caudal de llenado</span><strong><span id="coFlow">—</span> cm³/s</strong><small>Calculado con masa de 462 g</small></div>
+<div><span>Caída de presión máxima acumulada</span><strong><span id="coPmax">—</span> bar</strong><small>Modelo equivalente, no dato de máquina</small></div>
+<div><span>Temperatura mínima estimada del flujo</span><strong><span id="coTmin">—</span> °C</strong><small>Durante el llenado hipotético</small></div>
+<div><span>Rango de viscosidades</span><strong><span id="coEta">—</span> Pa·s</strong><small>Cross-WLF para HIPS PH-60</small></div>
+</div>
+<div class="coupled-chart-grid">
+<article class="data-card"><div class="card-top"><div><small>RED DE CAMINOS · ESTIMACIÓN</small><h3>Caída de presión acumulada vs. tiempo de llenado</h3></div></div><canvas aria-label="Pérdida de presión estimada durante el llenado" id="pressurePathChart" role="img"></canvas><p class="mini-note">La curva compara las pérdidas de un modelo de caminos ramificados. No debe confundirse con la presión hidráulica ni con una medición en la cavidad.</p></article>
+<article class="data-card"><div class="card-top"><div><small>ACOPLAMIENTO CON REFRIGERACIÓN</small><h3>Temperatura mínima del fundido que avanza</h3></div></div><canvas aria-label="Temperatura mínima calculada del flujo durante el llenado" id="meltFlowChart" role="img"></canvas><p class="mini-note">El enfriamiento móvil utiliza un tiempo de exposición efectivo supuesto; no resuelve convección interna, solidificación del frente ni calentamiento viscoso.</p></article>
+</div>
+<div class="balance-formula"><span>Ecuaciones simplificadas del modelo</span><code>Q_rama = Q_total × V_descendiente / V_total</code><code>γ̇ ≈ 6 Q_rama / (ancho_equivalente × h²)</code><code>Δp_rama ≈ 12 η(T,γ̇) Q_rama ΔL / (ancho_equivalente × h³)</code><code>T_flujo ≈ T_molde + (T_fundido − T_molde) exp[−4 α t_exposición / h²]</code></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>Q_rama</td><td>Caudal volumétrico asignado a una rama</td><td>cm³/s</td></tr>
+<tr><td>Q_total</td><td>Caudal volumétrico total de llenado</td><td>cm³/s</td></tr>
+<tr><td>V_descendiente</td><td>Volumen equivalente alimentado por la rama</td><td>cm³</td></tr>
+<tr><td>V_total</td><td>Volumen total equivalente de la cavidad</td><td>cm³</td></tr>
+<tr><td>γ̇</td><td>Tasa de cizallamiento estimada</td><td>s⁻¹</td></tr>
+<tr><td>h</td><td>Espesor local de flujo</td><td>m</td></tr>
+<tr><td>Δp_rama</td><td>Caída de presión acumulada en una rama</td><td>Pa o bar</td></tr>
+<tr><td>η(T,γ̇)</td><td>Viscosidad a la temperatura y cizallamiento local</td><td>Pa·s</td></tr>
+<tr><td>ΔL</td><td>Longitud del tramo de la rama</td><td>m</td></tr>
+<tr><td>T_flujo</td><td>Temperatura estimada del fundido móvil</td><td>°C</td></tr>
+<tr><td>T_molde</td><td>Temperatura efectiva de pared de molde</td><td>°C</td></tr>
+<tr><td>T_fundido</td><td>Temperatura inicial del fundido</td><td>°C</td></tr>
+<tr><td>α</td><td>Difusividad térmica del fundido</td><td>m²/s</td></tr>
+<tr><td>t_exposición</td><td>Tiempo térmico efectivo del elemento de flujo</td><td>s</td></tr>
+</tbody></table>
+<p class="mini-note" id="coupledWarning">Las dimensiones hidráulicas efectivas y la exposición térmica son hipótesis. Los coeficientes Cross-WLF pertenecen a HIPS PH-60, no al STYRON 478 de la máquina.</p>
+<div class="balance-caution"><strong>Alcance:</strong> se trata de un modelo de red con temperatura, viscosidad y caída de presión acopladas, <strong>no</strong> una resolución completa de Hele–Shaw, CFD ni Moldflow. La compuerta y la geometría hidráulica real siguen sin medirse. No se debe usar el resultado para cambiar consignas de presión de la máquina.</div>
+</section></div><div aria-label="Balance de materia" class="result-panel" data-panel="materia" hidden="" id="resultado-materia" role="region"><section aria-labelledby="materialTitle" class="balances-section" id="balances"><div class="balances-heading"><div><div class="eyebrow">CV1 · DOSIFICACIÓN Y PRODUCTO</div><h2 id="materialTitle">Balance de materia</h2><p>Composición HIPS/masterbatch y cierre por disparo. Todas las masas cambian al modificar la formulación en el panel de control.</p></div></div><div class="balances-grid one-card"><article class="data-card balance-card">
+<div class="card-top"><div><small>CV1 · DOSIFICACIÓN + PIEZA</small><h3>01 · Balance de materia</h3></div><span class="method-tag">g/ciclo</span></div>
+<table class="balance-table"><thead><tr><th>Corriente</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>
+<tr><td>HIPS natural</td><td id="bmHips">—</td><td>—</td></tr>
+<tr><td>Masterbatch blanco</td><td id="bmMb">—</td><td>—</td></tr>
+<tr><td>Puerta terminada</td><td>—</td><td id="bmPart">—</td></tr>
+<tr><td>Colada / rebabas / merma</td><td>—</td><td>0.00</td></tr>
+<tr class="total"><td>Total</td><td id="bmIn">—</td><td id="bmOut">—</td></tr>
+</tbody></table>
+<div class="balance-formula"><span>Ecuación</span><code>m_HIPS + m_MB = m_pieza + m_merma + Δm</code>
+<strong id="massEquation">—</strong></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>m_HIPS</td><td>Masa de HIPS alimentada por ciclo</td><td>g/ciclo</td></tr>
+<tr><td>m_MB</td><td>Masa de masterbatch alimentada por ciclo</td><td>g/ciclo</td></tr>
+<tr><td>m_pieza</td><td>Masa de la pieza obtenida</td><td>g/ciclo</td></tr>
+<tr><td>m_merma</td><td>Colada, rebaba o pérdida modelada</td><td>g/ciclo</td></tr>
+<tr><td>Δm</td><td>Acumulación de masa en el volumen de control</td><td>g/ciclo</td></tr>
+</tbody></table>
+<p class="mini-note">Se supone una sola cavidad, sin colada sólida ni pérdidas por ciclo y sin variación de inventario entre ciclos.</p>
+</article></div><div class="balance-caution">La igualdad de masas supone una cavidad, sin colada sólida ni merma por ciclo. Es un balance ideal, no una medición de pérdidas reales.</div></section></div><div aria-label="Balance de energía" class="result-panel" data-panel="energia" hidden="" id="resultado-energia" role="region"><section aria-labelledby="energiaTitle" class="balances-section" id="energia">
+<div class="balances-summary">
+<div><span>Entrada total de polímero</span><strong><span id="massBalanceTotal">462.00</span> g</strong></div>
+<div><span>Calor neto al polímero</span><strong><span id="heatBalanceTotal">—</span> kJ</strong></div>
+<div><span>Calor transferido al molde</span><strong><span id="coolBalanceTotal">—</span> kJ</strong></div>
+<div><span>Cierre numérico</span><strong class="closing-ok" id="balancesStatus">Sin calcular</strong></div>
+</div><div class="balances-heading">
+<div><div class="eyebrow">CONSERVACIÓN DE ENERGÍA · BASE POR CICLO</div><h2 id="energiaTitle">Balance de energía y refrigeración</h2>
+<p>Entradas, salidas y comprobaciones numéricas, actualizadas cuando cambias los parámetros. Referencia energética: material alimentado a la temperatura de la tolva.</p></div>
+<button class="balance-download" id="downloadBalances">↓ Exportar balances CSV</button>
+</div>
+
+<div class="balances-grid">
+
+<article class="data-card balance-card">
+<div class="card-top"><div><small>CV2 · PLASTIFICACIÓN</small><h3>02 · Balance térmico de calentamiento</h3></div><span class="method-tag">kJ/ciclo</span></div>
+<table class="balance-table"><thead><tr><th>Corriente</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>
+<tr><td>Alimentación (h = 0 en T tolva)</td><td>0.00</td><td>—</td></tr>
+<tr><td>Calor neto aportado al polímero</td><td id="beHeatIn">—</td><td>—</td></tr>
+<tr><td>Fundido hacia el molde</td><td>—</td><td id="beMeltOut">—</td></tr>
+<tr class="total"><td>Total</td><td id="beHeatTotalIn">—</td><td id="beHeatTotalOut">—</td></tr>
+</tbody></table>
+<div class="balance-formula"><span>Ecuación</span><code>Q_neto = m × ∫[T_tolva → T_fundido] Cp(T) dT</code>
+<strong id="heatEquation">—</strong></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>Q_neto</td><td>Calor neto incorporado al polímero</td><td>kJ/ciclo</td></tr>
+<tr><td>m</td><td>Masa total de polímero alimentado</td><td>kg/ciclo</td></tr>
+<tr><td>Cp(T)</td><td>Calor específico dependiente de la temperatura</td><td>J/(kg·K)</td></tr>
+<tr><td>T_tolva</td><td>Temperatura del material al entrar por la tolva</td><td>°C</td></tr>
+<tr><td>T_fundido</td><td>Temperatura del fundido a la salida de la boquilla</td><td>°C</td></tr>
+</tbody></table>
+<p class="mini-note">Es la variación de entalpía del polímero. Se usa el Cp(T) híbrido de HIPS también para el masterbatch, por falta de Cp medido de la mezcla. No es consumo eléctrico ni energía de resistencias individual.</p>
+</article>
+<article class="data-card balance-card">
+<div class="card-top"><div><small>CV3 · POLÍMERO EN EL MOLDE</small><h3>03 · Balance térmico de enfriamiento</h3></div><span class="method-tag">kJ/ciclo</span></div>
+<table class="balance-table"><thead><tr><th>Corriente</th><th>Entrada</th><th>Salida</th></tr></thead><tbody>
+<tr><td>Entalpía del fundido</td><td id="bcMeltIn">—</td><td>—</td></tr>
+<tr><td>Entalpía retenida en la puerta</td><td>—</td><td id="bcPieceOut">—</td></tr>
+<tr><td>Calor extraído hacia el molde</td><td>—</td><td id="bcCoolOut">—</td></tr>
+<tr class="total"><td>Total</td><td id="bcTotalIn">—</td><td id="bcTotalOut">—</td></tr>
+</tbody></table>
+<div class="balance-formula"><span>Ecuación</span><code>Q_fundido = Q_retenido + Q_retirado</code>
+<strong id="coolEquation">—</strong></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>Q_fundido</td><td>Entalpía del polímero fundido al entrar al molde</td><td>kJ/ciclo</td></tr>
+<tr><td>Q_retenido</td><td>Energía aún retenida por la pieza al abrir el molde</td><td>kJ/ciclo</td></tr>
+<tr><td>Q_retirado</td><td>Calor extraído hacia el molde durante el enfriamiento</td><td>kJ/ciclo</td></tr>
+</tbody></table>
+<p class="mini-note">Los espesores y fracciones de masa por región son aproximados. El calor retenido se calcula con la temperatura media de cada zona al abrir el molde.</p>
+</article>
+<article class="data-card balance-card">
+<div class="card-top"><div><small>CONTRASTE · CIRCUITO DE AGUA</small><h3>04 · ¿Cuánto calor absorbe el agua?</h3></div><span class="method-tag">Hipótesis</span></div>
+<table class="balance-table"><thead><tr><th>Magnitud</th><th>Valor</th><th>Condición</th></tr></thead><tbody>
+<tr><td>Agua hacia molde (TO)</td><td id="bwTo">—</td><td>Medido</td></tr>
+<tr><td>Agua de retorno (FROM)</td><td id="bwFrom">—</td><td id="bwFromSource">Supuesto</td></tr>
+<tr><td>Calor absorbido por agua</td><td id="bwWaterQ">—</td><td>Estimado</td></tr>
+<tr><td>Calor cedido por puerta</td><td id="bwPolyQ">—</td><td>Modelado</td></tr>
+<tr><td>Comparación ilustrativa Q_agua ≥ Q_pieza</td><td id="bwCheck">—</td><td id="bwCheckStatus">Pendiente</td></tr>
+<tr class="total"><td>Diferencia de estimaciones</td><td id="bwDiff">—</td><td id="bwValidationText">No contrastado</td></tr>
+</tbody></table>
+<div class="balance-formula"><span>Ecuación</span><code>Q_agua = ṁ_agua × Cp_agua × (T_FROM − T_TO) × t_ciclo</code>
+<strong id="waterEquation">—</strong></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>Q_agua</td><td>Calor absorbido por el circuito de agua</td><td>kJ/ciclo</td></tr>
+<tr><td>ṁ_agua</td><td>Caudal másico de agua</td><td>kg/s</td></tr>
+<tr><td>Cp_agua</td><td>Calor específico del agua</td><td>kJ/(kg·K)</td></tr>
+<tr><td>T_FROM</td><td>Temperatura del agua de retorno</td><td>°C</td></tr>
+<tr><td>T_TO</td><td>Temperatura del agua de entrada al molde</td><td>°C</td></tr>
+<tr><td>t_ciclo</td><td>Tiempo total del ciclo</td><td>s</td></tr>
+</tbody></table>
+<p class="mini-note">Para igualar únicamente el calor calculado de la puerta, el retorno sería <strong id="bwRequired">—</strong> y el incremento requerido del agua sería <strong id="bwRequiredDelta">—</strong>. Es un valor inferido, no una medición. El circuito puede intercambiar calor con otros componentes.</p>
+</article>
+</div>
+<div class="balance-caution">El cierre matemático verifica consistencia interna, <strong>no validación experimental</strong>. Si se registra FROM como medición real, únicamente pasa a estar medido ese dato, no todo el modelo. La comparación con el agua es ilustrativa, no una condición necesaria durante cada ciclo: intervienen almacenamiento energético del molde, otros equipos y diferencias de los periodos de medición.</div>
+</section></div><div aria-label="Reología y PVT" class="result-panel" data-panel="reologia" hidden="" id="resultado-reologia" role="region"><section aria-labelledby="rheoTitle" class="balances-section" id="reologia">
+<div class="balances-heading"><div><div class="eyebrow">SIGUIENTE ETAPA · REOLOGÍA Y COMPACTACIÓN</div><h2 id="rheoTitle">Viscosidad, flujo y PVT</h2>
+<p>Primera integración cuantitativa del modelo desarrollado en Python, con parámetros transferidos a JavaScript. Las propiedades corresponden a un HIPS comparable.</p></div><span class="method-tag">Estimaciones orientativas</span></div>
+<div class="rheo-grid">
+<div><span>Viscosidad Cross-WLF</span><strong><span id="rvEta">—</span> Pa·s</strong><small id="rvShear">—</small></div>
+<div><span>Caudal de llenado</span><strong><span id="rvFlow">—</span> cm³/s</strong><small>462 g durante el llenado supuesto</small></div>
+<div><span>Caída de presión equivalente</span><strong><span id="rvPressure">—</span> bar</strong><small>Ranura ideal, no presión real de máquina</small></div>
+<div><span>Compresión volumétrica PVT</span><strong><span id="rvPvt">—</span> %</strong><small id="rvPvtText">Presión supuesta en cavidad</small></div>
+</div>
+<div class="balance-formula"><span>Relaciones utilizadas</span><code>η(T,γ̇) = η₀(T) / [1 + (η₀(T) γ̇/τ*)^(1−n)]</code><code>v(T,p) = v₀(T) × [1 − 0.0894 ln(1 + p/B(T))]</code></div>
+<table class="symbols-table"><thead><tr><th>Símbolo</th><th>Significado</th><th>Unidad</th></tr></thead><tbody>
+<tr><td>η(T,γ̇)</td><td>Viscosidad del fundido a la condición local</td><td>Pa·s</td></tr>
+<tr><td>η₀(T)</td><td>Viscosidad de corte cero a la temperatura T</td><td>Pa·s</td></tr>
+<tr><td>T</td><td>Temperatura del fundido</td><td>°C</td></tr>
+<tr><td>γ̇</td><td>Tasa de cizallamiento</td><td>s⁻¹</td></tr>
+<tr><td>τ*</td><td>Esfuerzo característico del modelo Cross-WLF</td><td>Pa</td></tr>
+<tr><td>n</td><td>Índice de adelgazamiento por cizalla</td><td>adimensional</td></tr>
+<tr><td>v(T,p)</td><td>Volumen específico a T y p</td><td>cm³/g</td></tr>
+<tr><td>v₀(T)</td><td>Volumen específico a presión de referencia</td><td>cm³/g</td></tr>
+<tr><td>p</td><td>Presión supuesta de compactación</td><td>MPa</td></tr>
+<tr><td>B(T)</td><td>Función de compresibilidad del modelo Tait</td><td>MPa</td></tr>
+</tbody></table>
+<p class="mini-note">Cross-WLF: parámetros de HIPS POLYREX PH-60 publicados para 170–240 °C; no calibrados para STYRON 478. La caída de presión usa una ranura equivalente de 0,25 m de ancho y 0,12 m de longitud, con espesor editable. Tait usa coeficientes de presión supuestos: la compresión PVT no es contracción de moldeo.</p>
+</section></div><div aria-label="Sensibilidad" class="result-panel" data-panel="incertidumbre" hidden="" id="resultado-incertidumbre" role="region"><section aria-labelledby="sensitivityTitle" class="balances-section" id="incertidumbre">
+<div class="balances-heading"><div><div class="eyebrow">ANÁLISIS DE SENSIBILIDAD · ESCENARIOS HIPOTÉTICOS</div><h2 id="sensitivityTitle">¿Qué parámetros influyen más en la simulación?</h2><p>Variamos un parámetro a la vez (OFAT), dejando los demás constantes. Las perturbaciones son ilustrativas: no son límites experimentales ni intervalos de confianza.</p></div></div>
+<div class="sensitivity-tabs" role="group" aria-label="Categoría de sensibilidad"><button class="sensitivity-tab is-active" type="button" data-sensitivity="operacion" aria-pressed="true">Operación</button><button class="sensitivity-tab" type="button" data-sensitivity="termica" aria-pressed="false">Propiedades térmicas</button><button class="sensitivity-tab" type="button" data-sensitivity="reologia" aria-pressed="false">Reología y flujo</button></div>
+<div class="sensitivity-panel" data-sensitivity-panel="operacion"><div class="sensitivity-scroll"><table class="balance-table sensitivity-table"><thead><tr><th>Parámetro (bajo → alto)</th><th>Panel (°C)</th><th>Q al molde (kJ/pieza)</th><th>ΔP ranura (bar)</th></tr></thead><tbody id="sensitivityRows"><tr><td colspan="4">Selecciona este panel para calcular escenarios.</td></tr></tbody></table></div><p class="mini-note" id="sensitivityBase">Se evalúa un parámetro a la vez.</p></div>
+<div class="sensitivity-panel" data-sensitivity-panel="termica" hidden><p class="mini-note">Factores relativos de calor específico, conductividad y contacto polímero–molde, aplicados solo durante el estudio. El coeficiente de contacto es un supuesto del modelo térmico.</p><div class="sensitivity-scroll"><table class="balance-table sensitivity-table"><thead><tr><th>Parámetro y variación</th><th>Panel (°C)</th><th>Q molde (kJ)</th><th>ΔP red (bar)</th><th>T mín. flujo (°C)</th></tr></thead><tbody id="sensitivityThermalRows"></tbody></table></div></div>
+<div class="sensitivity-panel" data-sensitivity-panel="reologia" hidden><p class="mini-note">El modelo Cross-WLF es de HIPS PH-60 comparable; la geometría equivalente y sus perturbaciones no se midieron en la MA3800.</p><div class="sensitivity-scroll"><table class="balance-table sensitivity-table"><thead><tr><th>Parámetro y variación</th><th>Panel (°C)</th><th>Q molde (kJ)</th><th>ΔP red (bar)</th><th>T mín. flujo (°C)</th></tr></thead><tbody id="sensitivityRheoRows"></tbody></table></div></div>
+<div class="sensitivity-findings" id="sensitivityFindings">Abre una categoría para evaluar los parámetros.</div>
+<div class="balance-caution">Estas comparaciones son una <strong>verificación de sensibilidad numérica</strong>, no una calibración del material. Los resultados no autorizan cambios de presión, velocidad ni temperatura en la máquina real.</div>
+</section></div><div aria-label="Auditoría técnica del modelo" class="result-panel" data-panel="auditoria" hidden="" id="resultado-auditoria" role="region">
+<section class="balances-section audit-section" aria-labelledby="auditTitle">
+<div class="balances-heading"><div><div class="eyebrow">TRAZABILIDAD · CALIDAD DE LOS DATOS</div><h2 id="auditTitle">Auditoría técnica de ecuaciones y supuestos</h2>
+<p>Distinguimos datos observados, ecuaciones tomadas de literatura, relaciones adaptadas, inferencias y parámetros supuestos. Los resultados son exploratorios, no predicciones experimentalmente validadas.</p></div></div>
+<div class="audit-legend"><span>● Dato observado</span><span>● Literatura</span><span>● Adaptación</span><span>● Inferido</span><span>● Supuesto</span></div>
+<div class="audit-summary">
+<div><span>Volumen equivalente de la malla 2D</span><strong id="auditMeshV">—</strong><small>Espesores zonales y extensiones supuestos</small></div>
+<div><span>Volumen estimado del disparo fundido</span><strong id="auditMeltV">—</strong><small>462 g / ρ(T fundido)</small></div>
+<div><span>Diferencia relativa entre volúmenes</span><strong id="auditGap">—</strong><small>No se ha reconciliado geometría–masa</small></div>
+<div><span>∆T del agua necesario (solo puerta)</span><strong id="auditRequiredWater">—</strong><small>Inferido del calor calculado de la pieza</small></div>
+</div>
+<div class="audit-notice"><strong>Hallazgos prioritarios:</strong> (1) la malla de llenado no coincide exactamente con el volumen obtenido de la masa; (2) la temperatura FROM del circuito no fue medida; (3) las funciones de propiedades son híbridas y Cross-WLF se calibró para otro grado de HIPS; (4) la geometría de entrada, el contacto con molde y las fracciones de masa zonales son supuestos.</div>
+<div class="audit-table-wrap"><table class="symbols-table audit-table"><thead><tr><th>Relación</th><th>Procedencia</th><th>Uso y precaución</th></tr></thead><tbody>
+<tr><td>m_HIPS+m_MB=m_pieza</td><td>Conservación física + datos</td><td>462 g observados; sin merma se impone como hipótesis</td></tr>
+<tr><td>Cp(T), k(T), ρ(T)</td><td>Literatura + adaptación</td><td>Funciones por tramos, no correlaciones experimentales del lote</td></tr>
+<tr><td>T_pared = T_TO + 3.7(6/GPM)^0.65</td><td>Supuesto</td><td>No utilizar para estimar temperatura real del acero</td></tr>
+<tr><td>ρCp ∂T/∂t = ∂(k∂T/∂x)/∂x</td><td>Conservación física</td><td>Modelo 1D por zona; contacto térmico supuesto</td></tr>
+<tr><td>Q = m ∫ Cp dT</td><td>Balance físico + Cp adaptado</td><td>Calor sensible, no consumo eléctrico</td></tr>
+<tr><td>Q_agua = ṁ Cp ΔT t</td><td>Balance físico + FROM supuesta</td><td>Dato no verificable sin retorno real y límites del circuito</td></tr>
+<tr><td>Cross-WLF</td><td>Literatura (HIPS PH-60)</td><td>Viscosidad de material comparable, no HIPS 478 medido</td></tr>
+<tr><td>Δp de ranura + red de caminos</td><td>Física adaptada + geometría supuesta</td><td>No representa presión real de cavidad</td></tr>
+<tr><td>Tait PVT simplificado</td><td>Familia teórica + coeficientes supuestos</td><td>Compresión relativa, no contracción final</td></tr>
+<tr><td>Contracción térmica libre</td><td>Coeficiente de ficha + mezcla supuesta</td><td>No predice alabeo, restricciones ni tensiones residuales</td></tr>
+</tbody></table></div>
+<div class="audit-links"><a href="../documentacion/AUDITORIA_TECNICA_HIPS_LAB_v25.html" target="_blank" rel="noopener">Informe técnico completo</a><a href="../documentacion/AUDITORIA_TECNICA_HIPS_LAB_v25.pdf" target="_blank" rel="noopener">PDF</a><a href="../documentacion/AUDITORIA_TECNICA_HIPS_LAB_v25.docx" download>Word editable</a></div>
+<p class="mini-note">Ninguna de las categorías implica validación experimental. La tabla completa incluye prioridad, módulos del código y acciones recomendadas.</p>
+</section></div><div aria-label="Verificación de malla" class="result-panel" data-panel="convergencia" hidden id="resultado-convergencia" role="region">
+<section class="balances-section" id="convergencia">
+ <div class="balances-heading"><div><div class="eyebrow">VERIFICACIÓN NUMÉRICA · V26</div>
+ <h2>Volumen equivalente y refinamiento de malla</h2>
+ <p>Comparamos el volumen geométrico hipotético con el volumen calculado desde la masa del disparo y la densidad del fundido. La normalización contable no altera el espesor real ni valida el CAD de la pieza.</p></div></div>
+ <div class="audit-summary"><div><span>Volumen geométrico de malla</span><strong id="meshRawV26">—</strong><small>Espesores zonales aproximados</small></div>
+ <div><span>Volumen de disparo fundido</span><strong id="meshTargetV26">—</strong><small>462 g / ρ(T fundido)</small></div>
+ <div><span>Factor de ajuste volumétrico CONTABLE</span><strong id="meshFactorV26">—</strong><small>No modifica la geometría hidráulica</small></div>
+ <div><span>Volumen reconciliado para contabilidad</span><strong id="meshAdjustedV26">—</strong><small>Solo sirve para el balance por disparo</small></div></div>
+ <div class="balance-caution">El factor corrige la <strong>asignación equivalente de volumen</strong> sin cambiar espesores o dimensiones físicas. No permite afirmar que se conoce el volumen verdadero de la cavidad.</div>
+ <h3>Comparación de tres resoluciones</h3>
+ <div class="sensitivity-scroll"><table class="balance-table sensitivity-table"><thead><tr><th>Malla</th><th>V geom. (cm³)</th><th>t panel (s)</th><th>t lateral (s)</th><th>ΔP estimada (bar)</th></tr></thead><tbody id="gridCheckRowsV26"><tr><td colspan="5">Selecciona esta sección para calcular la comparación.</td></tr></tbody></table></div>
+ <p id="gridCheckNoteV26" class="mini-note">El tiempo de panel se evalúa en (u=0,50; v=0,28), a una distancia del punto de entrada central supuesto.</p>
+ <div class="balance-caution"><strong>Advertencia:</strong> resolver tres mallas no garantiza convergencia. Si cambia mucho la pérdida de presión, la red de flujo requiere mejoras antes de interpretarse cuantitativamente.</div>
+</section></div>
+<div aria-label="Guía de metodología" class="result-panel" data-panel="guia" hidden id="resultado-guia" role="region"><section class="balances-section guide-section" aria-labelledby="guideTitle"><div class="balances-heading"><div><div class="eyebrow">DOCUMENTACIÓN · PROCEDIMIENTO COMPLETO</div><h2 id="guideTitle">Cómo construimos HIPS LAB, paso a paso</h2><p>Guía final v30 con Anexo A y justificaciones de cierre: balance de calentamiento de HIPS + masterbatch, discretización del llenado, sustituciones numéricas de Cross-WLF, pérdidas de presión, compactación PVT y contracción. Cada ecuación distingue datos y supuestos.</p></div></div><div class="guide-grid">
+<article><b>01 · Datos reales</b><p>Haitian MA3800, una puerta de 462 g, 98 % HIPS + 2 % masterbatch, temperaturas y tiempos observados.</p></article>
+<article><b>02 · Geometría</b><p>La puerta se divide en panel, rebordes, laterales y dos puntos de ensamble. Algunos espesores se midieron y el panel se infirió.</p></article>
+<article><b>03 · Propiedades</b><p>Se reunió Cp(T), k(T), densidad, viscosidad Cross-WLF y expansión térmica. Hay datos bibliográficos y tramos interpolados.</p></article>
+<article><b>04 · Materia</b><p>452.76 g de HIPS + 9.24 g de masterbatch = 462 g por ciclo (modelo ideal).</p></article>
+<article><b>05 · Calentamiento</b><p>Q = m[w_HIPS∫Cp,HIPS dT + w_MB∫Cp,MB dT]. En la guía final v30 se muestran las cuatro integrales por intervalos y su conversión a 177.92 kJ/pieza.</p></article>
+<article><b>06 · Enfriamiento</b><p>Se resuelve conducción 1D por espesores con Cp(T), k(T), ρ(T) y contacto térmico supuesto.</p></article>
+<article><b>07 · Balance energético</b><p>177.92 kJ = 154.77 kJ al molde + 23.15 kJ retenidos; el cierre no equivale a validación experimental.</p></article>
+<article><b>08 · Llenado</b><p>Malla 65 × 67: volumen de celda, costo de avance ~1/h², caminos mínimos, fracciones acumuladas, t_llegada y contraste del volumen de malla con el disparo.</p></article>
+<article><b>09 · Reología</b><p>Se detallan η₀(T), γ̇, η(T,γ̇), Q y ΔP con sustituciones y unidades; comparación de modelo de ranura y red de caminos.</p></article>
+<article><b>10 · PVT y contracción</b><p>Se sustituyen B(T), v₀, v(T,p), compresión relativa y α_mezcla; se diferencia PVT de contracción libre posterior a expulsión.</p></article>
+<article><b>11 · App 3D</b><p>HTML/JavaScript visualiza pellets, tornillo, molde, puerta, perfiles térmicos, balances y gráficas; Python produce resultados reproducibles.</p></article>
+<article><b>12 · Verificación</b><p>Se comprueban balances y sensibilidad. No disponemos de ensayos que validen las predicciones frente a la máquina real.</p></article>
+</div><div class="guide-download"><a href="../documentacion/GUIA_EXPLICADA_HIPS_LAB_FINAL_v30.html#anexo-a-índice-general-de-simbología-y-nomenclatura" target="_blank" rel="noopener">Consultar Anexo A: simbología y unidades</a><a href="../documentacion/GUIA_EXPLICADA_HIPS_LAB_FINAL_v30.html" target="_blank" rel="noopener">Abrir guía completa con ecuaciones y fuentes</a><a href="../documentacion/GUIA_EXPLICADA_HIPS_LAB_FINAL_v30.pdf" target="_blank" rel="noopener">Leer informe PDF</a><a href="../documentacion/GUIA_EXPLICADA_HIPS_LAB_FINAL_v30.docx" download>Descargar Word editable</a></div><p class="mini-note">Estos datos corresponden al escenario de referencia; en el resto de paneles puedes recalcular al modificar parámetros.</p></section></div></section><div class="footer-note"><span>HIPS LAB · PROYECTO ACADÉMICO · FINAL V30</span><span>App final v30: cierre técnico documentado y entrada FROM real condicionada · No usar para ajustar la inyectora real</span></div>
+</main>
+</div>
+<script src="modelo_termico.js"></script>
+<script src="modelo_tornillo_v26.js"></script>
+<script src="modelo_mezcla_v18.js"></script>
+<script src="modelo_balances_v19.js"></script>
+<script src="modelo_reologia_v19.js"></script>
+<script src="modelo_frente_v20.js"></script>
+<script src="modelo_acoplado_v21.js"></script>
+<script src="verificacion_malla_v26.js"></script>
+<script src="puerta_mesh_v15.js"></script>
+<script src="app.js"></script>
+<script src="analisis_sensibilidad_v22.js"></script><script src="sensibilidad_propiedades_v27.js"></script><script src="paneles_resultados_v22.js"></script><script src="auditoria_tecnica_v25.js"></script><script src="panel_verificacion_v26.js"></script><script src="info_encabezado_v29.js"></script></body>
+</html>
